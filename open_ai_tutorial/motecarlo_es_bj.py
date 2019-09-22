@@ -22,7 +22,7 @@ class BlackJack:
             initial_action = np.random.choice(ACTIONS)
 
             player_sum = initial_state[1]
-            dealer_sum = initial_state[0]
+            dealer_sum = initial_state[2]
 
             dealer_card =[]
             dealer_card.append(initial_state[2])
@@ -30,13 +30,13 @@ class BlackJack:
             state = initial_state
             state.append(initial_action)
 
-            # TODO trajectoryをどこに入れるか
+            # TODO stateに21を超えたplayer_sumの値が行ってしまう
             while True:
                 action = agent.policy(episode, self.Q, state)
 
                 if initial_action is not None:
                     action = initial_action
-                    initial_action  = None
+                    initial_action = None
 
                 trajectory.append([state[0], state[1], state[2], action])
 
@@ -63,6 +63,9 @@ class BlackJack:
     def state_action_value(self, reward, trajectory):
         for usable_ace, player_sum, dealer_card, action in trajectory:
             player_sum -= 12
+            dealer_card -= 1
+            if player_sum > 9:
+                break
             self.R[player_sum][dealer_card][usable_ace][action] += reward
             self.Qc[player_sum][dealer_card][usable_ace][action] += 1
         self.Q = self.R / self.Qc
@@ -94,8 +97,12 @@ class Agent:
         return action
 
     def greedy_policy(self, Q, state):
-        return np.argmax(Q[state[1]][state[2]][state[0]])
-        pass
+        player = state[1] - 12
+        if player > 9:
+            return ACTION_STAY
+        dealer = state[2] - 1
+        usable_ace = state[0]
+        return np.argmax(Q[player][dealer][usable_ace])
 
     def initial_policy(self, state):
         player_sum = state[1]
@@ -108,9 +115,27 @@ class Agent:
 
 
 def main():
+    policy = np.zeros((2, 10, 10))
+
     bj = BlackJack()
     agent = Agent()
-    bj.play(5000,agent)
+    bj.play(50000, agent)
+
+    for i in range(2):
+        for j in range(10):
+            for k in range(10):
+                policy[i][j][k] = np.argmax(bj.Q[j][k][i])
+
+    print(policy[0])
+    print(policy[1])
+
+    x = np.array(range(1,11))
+    y = np.array(range(12,21))
+    fig = plt.figure()
+    axis = fig.add_subplot(111)
+    axis.set_xlabel("dealer open card")
+    axis.set_ylabel("player sum")
+    X, Y = np.meshgrid(x, y)
 
 
 if __name__ == "__main__":
