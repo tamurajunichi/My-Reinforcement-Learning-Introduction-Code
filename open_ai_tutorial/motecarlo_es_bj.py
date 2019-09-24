@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 from tqdm import tqdm
+import time
 
 ACTION_HIT = 0
 ACTION_STAY = 1
@@ -125,6 +126,8 @@ def main():
         for j in range(10):
             for k in range(10):
                 policy[i][j][k] = np.argmax(bj.Q[j][k][i])
+
+    time.sleep(1)
 
     print(policy[0])
     print(policy[1])
